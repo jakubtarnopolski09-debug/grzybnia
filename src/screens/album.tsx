@@ -3,7 +3,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import * as Sharing from 'expo-sharing';
 import { useState } from 'react';
-import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MUSHROOMS } from '@/data/mushrooms';
 import { alpha } from '@/constants/palette';
@@ -71,7 +72,7 @@ export function AlbumScreen({ header }: { header: any }) {
         return (
           <FadeIn delay={(index % 9) * 30}>
             <Tap onPress={() => open({ kind: 'photo', id: item.id })} style={[s.gridItem, { width: size, height: size }]}>
-              <Image source={{ uri: albumUri(item) }} style={StyleSheet.absoluteFill} />
+              <Image source={{ uri: albumUri(item) }} contentFit="cover" cachePolicy="memory" recyclingKey={albumUri(item)} style={StyleSheet.absoluteFill} />
               {m && (
                 <View style={s.gridLabel}>
                   <View style={[s.dot, { backgroundColor: c.status[m.s] }]} />
@@ -123,7 +124,7 @@ export function PhotoSheet({ id }: { id: string }) {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
       <View style={{ height: 420, backgroundColor: '#000' }}>
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={{ uri }} style={StyleSheet.absoluteFill} />
         <View style={s.heroShade} />
         <Tap onPress={back} style={[s.backBtn, { top: insets.top + 10 }]}>
           <Ionicons name="chevron-back" size={22} color="#fff" />

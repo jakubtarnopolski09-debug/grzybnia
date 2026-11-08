@@ -7,12 +7,21 @@ import { type Lang } from '@/i18n/strings';
 export type AlbumItem = { id: string; name: string; date: string; note: string; latin?: string; lat?: number; lng?: number };
 export type Settings = { lang: Lang; theme: ThemeMode };
 
+// folder albumu sprawdzamy na dysku tylko raz – albumUri() jest wołane przy każdej miniaturze
+let albumDirCache: Directory | null = null;
 export function albumDir() {
+  if (albumDirCache) return albumDirCache;
   const dir = new Directory(Paths.document, 'album');
   if (!dir.exists) dir.create();
+  albumDirCache = dir;
   return dir;
 }
-export const albumUri = (item: AlbumItem) => new File(albumDir(), item.name).uri;
+const uriByName = new Map<string, string>();
+export const albumUri = (item: AlbumItem) => {
+  let uri = uriByName.get(item.name);
+  if (!uri) { uri = new File(albumDir(), item.name).uri; uriByName.set(item.name, uri); }
+  return uri;
+};
 export const albumIndexFile = () => new File(Paths.document, 'album.json');
 export const settingsFile = () => new File(Paths.document, 'settings.json');
 

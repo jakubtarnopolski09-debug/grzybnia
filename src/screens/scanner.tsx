@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { File } from 'expo-file-system';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Animated, Easing, FlatList, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { alpha } from '@/constants/palette';
-import { type AlbumItem, albumUri, mimeOf } from '@/lib/storage';
+import { type AlbumItem, albumUri } from '@/lib/storage';
 import { useApp } from '@/context/app-context';
-import { API_KEY, findSpecies, identify, MAX_PHOTOS, SCAN_TXT, type ScanPhoto, type ScanResult, toPhoto } from '@/lib/scanner';
+import { findSpecies, identify, MAX_PHOTOS, preparePhoto, SCAN_TXT, ScanError, type ScanPhoto, type ScanResult } from '@/lib/scanner';
 import { FadeIn, Photo, ScreenTitle, StatusPill, Tap } from '@/components/common';
 import { pickImages } from '@/screens/album';
 
@@ -13,7 +13,7 @@ import { pickImages } from '@/screens/album';
 
 export function ConfidenceBar({ value, color }: { value: number; color: string }) {
   const { s } = useApp();
-  const grow = useRef(new Animated.Value(0)).current;
+  const grow = useState(() => new Animated.Value(0))[0];
   useEffect(() => {
     Animated.timing(grow, { toValue: value, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [grow, value]);
@@ -26,7 +26,7 @@ export function ConfidenceBar({ value, color }: { value: number; color: string }
 
 export function ScanLine({ height }: { height: number }) {
   const { s } = useApp();
-  const y = useRef(new Animated.Value(0)).current;
+  const y = useState(() => new Animated.Value(0))[0];
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(y, { toValue: 1, duration: 1300, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
@@ -62,34 +62,43 @@ export function ScannerScreen({ header }: { header: any }) {
 
   const fromAlbum = async (item: AlbumItem) => {
     try {
-      const uri = albumUri(item);
-      pushPhotos([{ uri, base64: await new File(uri).base64(), mime: mimeOf(uri), fromAlbum: true }]);
+      pushPhotos([await preparePhoto(albumUri(item), true)]);
     } catch (e: any) {
       setError(`${st.error}: ${e?.message ?? e}`);
     }
   };
 
+  // zdjęcie wysłane z albumu: wczytaj je raz na każde nowe "Skanuj" (scanSeed.n); stan zmienia się dopiero po await
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (scanSeed) fromAlbum(scanSeed.item);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanSeed?.n]);
 
   const add = async (src: 'camera' | 'gallery') => {
     setError('');
-    const assets = await pickImages(src, { mediaTypes: ['images'], quality: 0.5, base64: true }, MAX_PHOTOS - photos.length);
+    // bez base64 z aparatu – zdjęcie i tak zmniejszamy (preparePhoto), więc nie trzymamy w pamięci pełnego pliku
+    const assets = await pickImages(src, { mediaTypes: ['images'], quality: 0.9 }, MAX_PHOTOS - photos.length);
     if (assets === null) { setError(st.noPermission); return; }
-    const fresh = assets.map(toPhoto).filter((p): p is ScanPhoto => !!p);
-    if (fresh.some((p) => p.base64.length > 9_500_000)) { setError(st.tooBig); return; }
-    if (fresh.length) pushPhotos(fresh);
+    if (!assets.length) return;
+    try {
+      pushPhotos(await Promise.all(assets.map((a) => preparePhoto(a.uri))));
+    } catch (e: any) {
+      setError(`${st.error}: ${e?.message ?? e}`);
+    }
   };
 
   const analyze = async () => {
-    if (!API_KEY) { setError(st.noKey); return; }
     setBusy(true); setError(''); setResult(null); setShowAlbum(false);
     try {
       setResult(await identify(photos, lang));
     } catch (e: any) {
-      setError(`${st.error}: ${e?.message ?? e}`);
+      const code = e instanceof ScanError ? e.code : '';
+      setError(code === 'no_key' ? st.noKey
+        : code === 'too_big' ? st.tooBig
+        : code === 'network' ? st.offline
+        : code === 'rate_limit' ? st.busy
+        : `${st.error}: ${e?.message ?? e}`);
     } finally {
       setBusy(false);
     }
@@ -116,7 +125,7 @@ export function ScannerScreen({ header }: { header: any }) {
       {/* Wizjer */}
       <View style={[s.finder, { height: finderH }]}>
         {photos.length > 0 ? (
-          <Image source={{ uri: photos[0].uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <Image source={{ uri: photos[0].uri }} contentFit="cover" cachePolicy="memory" recyclingKey={photos[0].uri} style={StyleSheet.absoluteFill} />
         ) : (
           <View style={s.finderEmpty}>
             <Ionicons name="scan-outline" size={52} color={c.cream} />
@@ -138,7 +147,7 @@ export function ScannerScreen({ header }: { header: any }) {
         <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 10 }}>
           {photos.map((p) => (
             <View key={p.uri}>
-              <Image source={{ uri: p.uri }} style={s.thumb} />
+              <Image source={{ uri: p.uri }} contentFit="cover" cachePolicy="memory" recyclingKey={p.uri} style={s.thumb} />
               {!busy && (
                 <Pressable onPress={() => remove(p.uri)} style={s.thumbX} hitSlop={6}>
                   <Ionicons name="close" size={12} color="#fff" />
@@ -175,7 +184,7 @@ export function ScannerScreen({ header }: { header: any }) {
             contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 10 }}
             renderItem={({ item }) => (
               <Tap onPress={() => fromAlbum(item)} style={s.thumb}>
-                <Image source={{ uri: albumUri(item) }} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+                <Image source={{ uri: albumUri(item) }} contentFit="cover" cachePolicy="memory" recyclingKey={albumUri(item)} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
               </Tap>
             )}
           />

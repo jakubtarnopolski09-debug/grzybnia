@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Easing, StatusBar } from 'react-native';
 import { type Sheet, useApp } from '@/context/app-context';
 import { SpeciesSheet } from '@/screens/species-sheet';
@@ -10,7 +10,7 @@ import { ForestListSheet, ForestSheet } from '@/screens/forest-sheets';
 
 export function SheetView({ sheet }: { sheet: Sheet }) {
   const { c } = useApp();
-  const v = useRef(new Animated.Value(0)).current;
+  const v = useState(() => new Animated.Value(0))[0];
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [v]);

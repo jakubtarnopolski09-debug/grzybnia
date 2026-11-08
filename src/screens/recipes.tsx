@@ -59,7 +59,7 @@ export function RecipeSheet({ r }: { r: Recipe }) {
   const { c, s, t, lang, open } = useApp();
   const li = lang === 'pl' ? 0 : 1;
   const [done, setDone] = useState<Set<number>>(new Set());
-  const toggle = (i: number) => setDone((cur) => { const n = new Set(cur); n.has(i) ? n.delete(i) : n.add(i); return n; });
+  const toggle = (i: number) => setDone((cur) => { const n = new Set(cur); if (n.has(i)) n.delete(i); else n.add(i); return n; });
   const species = r.species.map((l) => findSpecies(l)).filter(Boolean) as Mushroom[];
   return (
     <ScrollView style={{ flex: 1, backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: 40 }}>

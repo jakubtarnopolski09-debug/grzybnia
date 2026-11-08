@@ -61,6 +61,8 @@ export function MapScreen({ active, focus }: { active: boolean; focus: { lat: nu
     if (!ready || !me) return;
     js(`window.app.setMe(${me.lat},${me.lng},${Math.round(me.acc)})`);
     if (!centeredOnMe.current && !focus) { centeredOnMe.current = true; js(`window.app.fly(${me.lat},${me.lng},12)`); }
+    // celowo bez `focus`: zmiana celu na mapie nie ma ponownie wysyłać pozycji użytkownika
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, me]);
 
   useEffect(() => {
@@ -89,9 +91,11 @@ export function MapScreen({ active, focus }: { active: boolean; focus: { lat: nu
       if (!names) { setToast(mt.bansErr); return; }
       js(`window.app.setBans(${JSON.stringify(BANS_WMS)},${JSON.stringify(names)},true)`);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zmiana języka nie ma ponownie wczytywać warstwy zakazów
   }, [ready, show.bans]);
   useEffect(() => {
     if (ready && focus) js(`window.app.fly(${focus.lat},${focus.lng},${focus.zoom})`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lecimy tylko przy nowym żądaniu (focus.n)
   }, [ready, focus?.n]);
   useEffect(() => {
     if (!toast) return;

@@ -1,5 +1,10 @@
+import { File, Paths } from 'expo-file-system';
+import { readJson, writeJson } from '@/lib/storage';
 
-// Zdjęcia: Wikipedia (EN, potem PL), a gdy obrazek się nie wczyta – iNaturalist
+// Zdjęcia: Wikipedia (EN, potem PL), a gdy obrazek się nie wczyta – iNaturalist.
+// Adresy zdjęć zapisujemy w pamięci telefonu (photos.json), więc kolejne uruchomienia
+// nie odpytują Wikipedii – lista jest od razu. Odświeżamy ją co PHOTOS_TTL_DAYS dni.
+// Same obrazki trzyma w cache dysku expo-image.
 
 // Serwer obrazków Wikimedia często odrzuca aplikacje (HTTP 403), dlatego po kilku takich błędach
 // aplikacja przestaje próbować Wikipedii i od razu bierze zdjęcia z iNaturalist.
@@ -9,6 +14,12 @@ export const HEADERS = { 'User-Agent': USER_AGENT, 'Api-User-Agent': USER_AGENT 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export const wikiImages = { errors: 0 }; // licznik błędów obrazków Wikimedia (wspólny dla całej aplikacji)
 export const WIKI_ERROR_LIMIT = 3;
+
+const PHOTOS_TTL_DAYS = 30;
+const DAY = 24 * 60 * 60 * 1000;
+type PhotoCache = { savedAt: number; latins: number; photos: Photos };
+const photoCacheFile = () => new File(Paths.cache, 'photos.json');
+const inatCacheFile = () => new File(Paths.cache, 'inat.json');
 
 export async function wikiThumbs(host: string, titles: string[]): Promise<Photos> {
   const out: Photos = {};
@@ -33,20 +44,46 @@ export async function wikiThumbs(host: string, titles: string[]): Promise<Photos
   return out;
 }
 
+/** Zapisane adresy zdjęć (jeśli są) – do natychmiastowego wyświetlenia przy starcie. */
+export function cachedPhotos(): { photos: Photos; fresh: boolean } {
+  const cache = readJson<PhotoCache | null>(photoCacheFile(), null);
+  if (!cache?.photos) return { photos: {}, fresh: false };
+  return { photos: cache.photos, fresh: Date.now() - cache.savedAt < PHOTOS_TTL_DAYS * DAY };
+}
+
 export async function loadAllPhotos(latins: string[], onUpdate: (p: Photos) => void) {
-  let found: Photos = await wikiThumbs('en.wikipedia.org', latins);
+  const { photos, fresh } = cachedPhotos();
+  // baza się rozrosła (nowe gatunki) – dociągamy tylko brakujące, reszta zostaje z pamięci
+  const known = new Set(Object.keys(photos));
+  const todo = fresh ? latins.filter((l) => !known.has(l)) : latins;
+  if (!todo.length) return;
+
+  let found: Photos = await wikiThumbs('en.wikipedia.org', todo);
+  if (fresh) found = { ...photos, ...found };
   onUpdate(found);
-  const missing = latins.filter((l) => !found[l]);
+  const missing = todo.filter((l) => !found[l]);
   if (missing.length) {
     found = { ...found, ...(await wikiThumbs('pl.wikipedia.org', missing)) };
-    onUpdate(found);
   }
+  // gatunki bez zdjęcia też zapisujemy (null), żeby nie pytać o nie przy każdym starcie
+  for (const l of todo) if (!(l in found)) found[l] = null;
+  onUpdate(found);
+  // nie zapisuj wyniku, gdy sieć w ogóle nie odpowiedziała – spróbujemy przy następnym starcie
+  if (Object.values(found).some(Boolean)) writeJson(photoCacheFile(), { savedAt: Date.now(), latins: latins.length, photos: found } satisfies PhotoCache);
 }
 
 // iNaturalist: zdjęcie domyślne gatunku. Zapytania idą po kolei co 0,7 s (limit API),
-// tylko dla grzybów widocznych na ekranie, a wynik jest zapamiętywany.
-export const inatCache = new Map<string, Promise<string | null>>();
-export let inatQueue: Promise<unknown> = Promise.resolve();
+// tylko dla grzybów widocznych na ekranie, a wynik jest zapamiętywany – także na dysku.
+const inatSaved: Record<string, string | null> = readJson(inatCacheFile(), {});
+const inatCache = new Map<string, Promise<string | null>>(
+  Object.entries(inatSaved).map(([k, v]) => [k, Promise.resolve(v)]),
+);
+let inatQueue: Promise<unknown> = Promise.resolve();
+let inatSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const saveInatSoon = () => {
+  if (inatSaveTimer) return;
+  inatSaveTimer = setTimeout(() => { inatSaveTimer = null; writeJson(inatCacheFile(), inatSaved); }, 2000);
+};
 
 export function inatPhoto(latin: string): Promise<string | null> {
   const cached = inatCache.get(latin);
@@ -54,13 +91,16 @@ export function inatPhoto(latin: string): Promise<string | null> {
   const job = inatQueue.then(async () => {
     try {
       const res = await fetch(`https://api.inaturalist.org/v1/taxa?rank=species&per_page=1&q=${encodeURIComponent(latin)}`, { headers: HEADERS });
-      if (!res.ok) { console.log(`[zdjęcia] iNaturalist: HTTP ${res.status}`); return null; }
+      if (!res.ok) { console.log(`[zdjęcia] iNaturalist: HTTP ${res.status}`); inatCache.delete(latin); return null; }
       const json = await res.json();
       const taxon = json.results?.[0];
-      if (!taxon || taxon.name?.toLowerCase() !== latin.toLowerCase()) return null;
-      return (taxon.default_photo?.medium_url as string | undefined) ?? null;
+      const url = taxon && taxon.name?.toLowerCase() === latin.toLowerCase() ? ((taxon.default_photo?.medium_url as string | undefined) ?? null) : null;
+      inatSaved[latin] = url;
+      saveInatSoon();
+      return url;
     } catch (e: any) {
       console.log(`[zdjęcia] iNaturalist: ${e?.message ?? e}`);
+      inatCache.delete(latin); // błąd sieci – spróbuj ponownie później
       return null;
     } finally {
       await sleep(700);

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { type Mushroom, MUSHROOMS, SEASON, type Status, STATUS_ORDER } from '@/data/mushrooms';
 import { useApp } from '@/context/app-context';
@@ -7,9 +7,17 @@ import { FadeIn, Glyph, Photo, StatusPill, Tap } from '@/components/common';
 
 // ATLAS
 
+// Wyszukiwanie: małe litery i bez polskich znaków („zolciak” znajdzie „Żółciak”).
+// Tekst do przeszukania i posortowane listy liczymy raz, nie przy każdym wpisanym znaku.
+const fold = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l');
+const HAYSTACK = new Map(MUSHROOMS.map((m) => [m.id, fold(`${m.latin} ${m.pl} ${m.en}`)]));
+const SORTED: Partial<Record<'pl' | 'en', Mushroom[]>> = {};
+const sortedFor = (lang: 'pl' | 'en') =>
+  (SORTED[lang] ??= [...MUSHROOMS].sort((a, b) => (lang === 'pl' ? a.pl.localeCompare(b.pl, 'pl') : a.en.localeCompare(b.en))));
+
 export function Hero({ month, list, scrollY }: { month: number; list: Mushroom[]; scrollY: Animated.Value }) {
   const { c, s, t } = useApp();
-  const float = useRef(new Animated.Value(0)).current;
+  const float = useState(() => new Animated.Value(0))[0];
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(float, { toValue: 1, duration: 2800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
@@ -73,7 +81,7 @@ export function AtlasScreen({ header }: { header: any }) {
   const { c, s, t, lang } = useApp();
   const [filter, setFilter] = useState<Status | 'all'>('all');
   const [query, setQuery] = useState('');
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useState(() => new Animated.Value(0))[0];
   const month = new Date().getMonth() + 1;
 
   const inSeason = useMemo(
@@ -81,10 +89,8 @@ export function AtlasScreen({ header }: { header: any }) {
     [month],
   );
   const data = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return MUSHROOMS
-      .filter((m) => (filter === 'all' || m.s === filter) && (!q || `${m.latin} ${m.pl} ${m.en}`.toLowerCase().includes(q)))
-      .sort((a, b) => (lang === 'pl' ? a.pl.localeCompare(b.pl, 'pl') : a.en.localeCompare(b.en)));
+    const q = fold(query.trim());
+    return sortedFor(lang).filter((m) => (filter === 'all' || m.s === filter) && (!q || HAYSTACK.get(m.id)!.includes(q)));
   }, [query, filter, lang]);
 
   const listHeader = (
@@ -135,6 +141,7 @@ export function AtlasScreen({ header }: { header: any }) {
       ListEmptyComponent={<Text style={[s.subtle, { textAlign: 'center', marginTop: 30 }]}>{t.noResults}</Text>}
       keyboardShouldPersistTaps="handled"
       initialNumToRender={10}
+      maxToRenderPerBatch={10}
       windowSize={7}
       contentContainerStyle={{ paddingBottom: 120 }}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}

@@ -1,13 +1,13 @@
 import { File } from 'expo-file-system';
 import * as Location from 'expo-location';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Easing, Modal, StatusBar, useColorScheme, View } from 'react-native';
 import { MUSHROOMS } from '@/data/mushrooms';
 import { DARK, LIGHT } from '@/constants/palette';
 import { L } from '@/i18n/strings';
 import { albumDir, albumIndexFile, type AlbumItem, copyIntoAlbum, readJson, type Settings, settingsFile, writeJson } from '@/lib/storage';
 import { type App, AppCtx, type Sheet, type Tab } from '@/context/app-context';
-import { loadAllPhotos, type Photos } from '@/lib/photos';
+import { cachedPhotos, loadAllPhotos, type Photos } from '@/lib/photos';
 import { TabBar, TABS, TopBar } from '@/components/common';
 import { AtlasScreen } from '@/screens/atlas';
 import { RecipesScreen } from '@/screens/recipes';
@@ -36,11 +36,13 @@ export default function GrzybniaApp() {
   const lang = settings.lang;
 
   // zdjęcia gatunków
-  const [photos, setPhotos] = useState<Photos>({});
-  const [photosDone, setPhotosDone] = useState(false);
+  // zapisane adresy pokazujemy od razu, a sieć odpytujemy tylko o nowe gatunki lub po 30 dniach
+  const [initialPhotos] = useState(cachedPhotos);
+  const [photos, setPhotos] = useState<Photos>(initialPhotos.photos);
+  const [photosDone, setPhotosDone] = useState(initialPhotos.fresh);
   useEffect(() => {
     let alive = true;
-    loadAllPhotos([...MUSHROOMS].sort((a, b) => a.pl.localeCompare(b.pl, 'pl')).map((m) => m.latin), (p) => alive && setPhotos(p))
+    loadAllPhotos(MUSHROOMS.map((m) => m.latin), (p) => alive && setPhotos(p))
       .finally(() => alive && setPhotosDone(true));
     return () => { alive = false; };
   }, []);
@@ -84,10 +86,13 @@ export default function GrzybniaApp() {
 
   // nawigacja
   const [tab, setTab] = useState<Tab>('atlas');
-  const fade = useRef(new Animated.Value(1)).current;
+  // zakładka (zwłaszcza mapa z WebView) powstaje dopiero przy pierwszym otwarciu, potem zostaje w pamięci
+  const [visited, setVisited] = useState<ReadonlySet<Tab>>(() => new Set<Tab>(['atlas']));
+  const fade = useState(() => new Animated.Value(1))[0];
   const switchTab = (k: Tab) => {
     if (k === tab) return;
     setTab(k);
+    setVisited((cur) => (cur.has(k) ? cur : new Set(cur).add(k)));
     fade.setValue(0);
     Animated.timing(fade, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   };
@@ -118,7 +123,7 @@ export default function GrzybniaApp() {
     <AppCtx.Provider value={ctx}>
       <View style={s.root}>
         <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
-        {TABS.map((k) => (
+        {TABS.filter((k) => visited.has(k)).map((k) => (
           <Animated.View
             key={k}
             style={[s.flex, { display: tab === k ? 'flex' : 'none' }, tab === k && {

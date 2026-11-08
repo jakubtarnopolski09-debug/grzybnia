@@ -26,7 +26,7 @@ export function MonthStrip({ months }: { months: number[] }) {
 }
 
 export function ForestSheet({ f }: { f: Forest }) {
-  const { c, s, t, lang, open, back, showOnMap } = useApp();
+  const { c, s, lang, open, back, showOnMap } = useApp();
   const mt = MAP_TXT[lang];
   const li = lang === 'pl' ? 0 : 1;
   const insets = useSafeAreaInsets();

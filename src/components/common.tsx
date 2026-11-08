@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
+import { Image } from 'expo-image';
+import { useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type Status } from '@/data/mushrooms';
@@ -14,7 +15,7 @@ import { bigger, inatPhoto, USER_AGENT, WIKI_ERROR_LIMIT, wikiImages } from '@/l
 export function Tap({ onPress, onLongPress, style, outer, children, scale = 0.97, disabled }: {
   onPress?: () => void; onLongPress?: () => void; style?: any; outer?: any; children?: any; scale?: number; disabled?: boolean;
 }) {
-  const v = useRef(new Animated.Value(1)).current;
+  const v = useState(() => new Animated.Value(1))[0];
   const to = (x: number) => Animated.spring(v, { toValue: x, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
   return (
     <Pressable onPress={onPress} onLongPress={onLongPress} disabled={disabled} onPressIn={() => to(scale)} onPressOut={() => to(1)} style={outer}>
@@ -42,10 +43,12 @@ export function Glyph({ size = 24, cap, stem = '#F1E6CF', dots = true }: { size?
   );
 }
 
+// Zdjęcie gatunku. expo-image trzyma obrazki w cache na dysku i w pamięci, więc po pierwszym
+// wczytaniu pojawiają się natychmiast, także bez internetu; sam też zmniejsza je do rozmiaru widoku.
+const PHOTO_HEADERS = { 'User-Agent': USER_AGENT };
 export function Photo({ latin, style, big, empty = '' }: { latin: string; style: any; big?: boolean; empty?: string }) {
   const { c, s, photoOf } = useApp();
   const url = photoOf(latin);
-  const fade = useRef(new Animated.Value(0)).current;
   const [wikiFailed, setWikiFailed] = useState(false);
   const [alt, setAlt] = useState<string | null | undefined>(undefined); // zdjęcie z iNaturalist
   const useWiki = !!url && !wikiFailed && wikiImages.errors < WIKI_ERROR_LIMIT;
@@ -69,15 +72,16 @@ export function Photo({ latin, style, big, empty = '' }: { latin: string; style:
       </View>
       {showEmpty && !!empty && <Text style={[s.mono, { marginTop: 6 }]}>{empty}</Text>}
       {!!src && (
-        <Animated.Image
-          key={src}
-          source={{ uri: src, headers: { 'User-Agent': USER_AGENT } }}
-          style={[StyleSheet.absoluteFill, { opacity: fade }]}
-          resizeMode="cover"
+        <Image
+          source={{ uri: src, headers: PHOTO_HEADERS }}
+          recyclingKey={latin}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={{ duration: 300, skipOnCacheHit: 'all' } as any}
           onError={() => {
             if (useWiki) { wikiImages.errors += 1; setWikiFailed(true); } else setAlt(null);
           }}
-          onLoad={() => { fade.setValue(0); Animated.timing(fade, { toValue: 1, duration: 350, useNativeDriver: true }).start(); }}
         />
       )}
     </View>
@@ -98,7 +102,7 @@ export function StatusPill({ st, small }: { st: Status; small?: boolean }) {
 export function TopBar({ setLang, toggleTheme }: { setLang: (l: Lang) => void; toggleTheme: () => void }) {
   const { c, s, t, lang } = useApp();
   const insets = useSafeAreaInsets();
-  const spin = useRef(new Animated.Value(c.dark ? 1 : 0)).current;
+  const spin = useState(() => new Animated.Value(c.dark ? 1 : 0))[0];
   useEffect(() => {
     Animated.spring(spin, { toValue: c.dark ? 1 : 0, useNativeDriver: true, friction: 6 }).start();
   }, [c.dark, spin]);
@@ -138,7 +142,7 @@ export function ScreenTitle({ title, sub }: { title: string; sub: string }) {
 
 // Wejście elementu: delikatne pojawienie się od dołu
 export function FadeIn({ delay = 0, children, style }: { delay?: number; children: any; style?: any }) {
-  const v = useRef(new Animated.Value(0)).current;
+  const v = useState(() => new Animated.Value(0))[0];
   useEffect(() => {
     Animated.timing(v, { toValue: 1, duration: 380, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [v, delay]);
@@ -157,7 +161,7 @@ export function TabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) 
   const { c, s, t } = useApp();
   const insets = useSafeAreaInsets();
   const [w, setW] = useState(0);
-  const x = useRef(new Animated.Value(0)).current;
+  const x = useState(() => new Animated.Value(0))[0];
   const idx = TABS.indexOf(tab);
   const itemW = w / TABS.length;
   useEffect(() => {
