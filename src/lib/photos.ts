@@ -74,18 +74,24 @@ export async function loadAllPhotos(latins: string[], onUpdate: (p: Photos) => v
 
 // iNaturalist: zdjęcie domyślne gatunku. Zapytania idą po kolei co 0,7 s (limit API),
 // tylko dla grzybów widocznych na ekranie, a wynik jest zapamiętywany – także na dysku.
-const inatSaved: Record<string, string | null> = readJson(inatCacheFile(), {});
-const inatCache = new Map<string, Promise<string | null>>(
-  Object.entries(inatSaved).map(([k, v]) => [k, Promise.resolve(v)]),
-);
+// wczytywane przy pierwszym użyciu, nie przy imporcie modułu (import nie może dotykać dysku)
+let inatSaved: Record<string, string | null> | null = null;
+const inatCache = new Map<string, Promise<string | null>>();
+const ensureInatLoaded = () => {
+  if (inatSaved) return inatSaved;
+  inatSaved = readJson<Record<string, string | null>>(inatCacheFile(), {});
+  for (const [k, v] of Object.entries(inatSaved)) inatCache.set(k, Promise.resolve(v));
+  return inatSaved;
+};
 let inatQueue: Promise<unknown> = Promise.resolve();
 let inatSaveTimer: ReturnType<typeof setTimeout> | null = null;
 const saveInatSoon = () => {
   if (inatSaveTimer) return;
-  inatSaveTimer = setTimeout(() => { inatSaveTimer = null; writeJson(inatCacheFile(), inatSaved); }, 2000);
+  inatSaveTimer = setTimeout(() => { inatSaveTimer = null; writeJson(inatCacheFile(), ensureInatLoaded()); }, 2000);
 };
 
 export function inatPhoto(latin: string): Promise<string | null> {
+  const saved = ensureInatLoaded();
   const cached = inatCache.get(latin);
   if (cached) return cached;
   const job = inatQueue.then(async () => {
@@ -95,7 +101,7 @@ export function inatPhoto(latin: string): Promise<string | null> {
       const json = await res.json();
       const taxon = json.results?.[0];
       const url = taxon && taxon.name?.toLowerCase() === latin.toLowerCase() ? ((taxon.default_photo?.medium_url as string | undefined) ?? null) : null;
-      inatSaved[latin] = url;
+      saved[latin] = url;
       saveInatSoon();
       return url;
     } catch (e: any) {

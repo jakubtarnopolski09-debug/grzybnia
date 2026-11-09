@@ -12,6 +12,7 @@ import { TabBar, TABS, TopBar } from '@/components/common';
 import { AtlasScreen } from '@/screens/atlas';
 import { RecipesScreen } from '@/screens/recipes';
 import { AlbumScreen } from '@/screens/album';
+import { GameScreen } from '@/game/ui/GameScreen';
 import { MapScreen } from '@/screens/map';
 import { ScannerScreen } from '@/screens/scanner';
 import { sheetKey, SheetView } from '@/screens/sheet-view';
@@ -136,6 +137,7 @@ export default function GrzybniaApp() {
             {k === 'scan' && <ScannerScreen header={header} />}
             {k === 'recipes' && <RecipesScreen header={header} />}
             {k === 'album' && <AlbumScreen header={header} />}
+            {k === 'game' && <GameScreen header={header} active={tab === 'game'} />}
           </Animated.View>
         ))}
         <TabBar tab={tab} setTab={switchTab} />

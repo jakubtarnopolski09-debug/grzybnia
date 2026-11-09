@@ -154,8 +154,8 @@ export function FadeIn({ delay = 0, children, style }: { delay?: number; childre
 }
 
 // Dolne menu z przesuwanym podświetleniem
-export const TABS: Tab[] = ['atlas', 'map', 'scan', 'recipes', 'album'];
-export const TAB_ICON: Record<Tab, string> = { atlas: 'leaf', map: 'map', scan: 'scan', recipes: 'restaurant', album: 'images' };
+export const TABS: Tab[] = ['atlas', 'map', 'game', 'scan', 'recipes', 'album'];
+export const TAB_ICON: Record<Tab, string> = { atlas: 'leaf', map: 'map', game: 'game-controller', scan: 'scan', recipes: 'restaurant', album: 'images' };
 
 export function TabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const { c, s, t } = useApp();
