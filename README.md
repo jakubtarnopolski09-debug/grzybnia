@@ -58,17 +58,6 @@ Endpoint jest publiczny – przed szerszą publikacją warto dodać limit zapyta
 | `src/components/` | wspólne elementy UI |
 | `src/styles/`, `src/constants/palette.ts`, `src/i18n/` | style, kolory, teksty PL/EN |
 
-## Mini-gra „Grzybobranie” (zakładka Gra)
-
-Kod w [`src/game/`](src/game/): `data.ts` (80 grzybów, typy, rzadkość, ewolucje), `art.tsx` (grafiki SVG rysowane
-z parametrów), `logic.ts` (spawny z GPS, CP, łapanie, ulepszanie, ewolucje, walki – czyste funkcje),
-`state.ts` (zapis `game.json`), `ui/` (radar, łapanie, Grzybodex, kolekcja, walki z Zespołem G).
-
-- Grzyby pojawiają się deterministycznie w komórkach ~70 m wokół gracza (nowe co 15 min); łapać można z 60 m.
-- Paśniki dają koszyki (odnawiają się co 5 min); część paśników co godzinę zajmuje Zespół G.
-- Balans walk sprawdzony symulacją: członek Zespołu G ~75–90% wygranych, lider ~40–55%, walka 3 na 3 to ~16–23 tury.
-- Każdy grzyb gry odpowiada prawdziwemu gatunkowi z atlasu (link w Grzybodexie, pokazany prawdziwy status jadalności).
-
 ## Wydajność – co warto wiedzieć
 
 - Adresy zdjęć gatunków są zapisywane w pamięci telefonu (`photos.json`, `inat.json` w cache) i odświeżane co 30 dni;

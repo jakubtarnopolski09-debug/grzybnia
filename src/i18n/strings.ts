@@ -10,7 +10,7 @@ export const plural = (n: number, one: string, few: string, many: string) =>
 export const L = {
   pl: {
     brand: 'Grzybnia',
-    tabs: { atlas: 'Atlas', map: 'Mapa', game: 'Gra', scan: 'Skaner', recipes: 'Przepisy', album: 'Zdjęcia' },
+    tabs: { atlas: 'Atlas', map: 'Mapa', scan: 'Skaner', recipes: 'Przepisy', album: 'Zdjęcia' },
     months: ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'],
     monthLetters: ['S', 'L', 'M', 'K', 'M', 'C', 'L', 'S', 'W', 'P', 'L', 'G'],
     label: { e: 'Jadalny', c: 'Warunkowo', i: 'Niejadalny', t: 'Trujący', d: 'Śmiertelny' },
@@ -46,7 +46,7 @@ export const L = {
   },
   en: {
     brand: 'Mycelium',
-    tabs: { atlas: 'Atlas', map: 'Map', game: 'Game', scan: 'Scanner', recipes: 'Recipes', album: 'Photos' },
+    tabs: { atlas: 'Atlas', map: 'Map', scan: 'Scanner', recipes: 'Recipes', album: 'Photos' },
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     monthLetters: ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
     label: { e: 'Edible', c: 'Conditional', i: 'Inedible', t: 'Poisonous', d: 'Deadly' },

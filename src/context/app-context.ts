@@ -9,7 +9,7 @@ import { type Styles } from '@/styles/make-styles';
 
 // Wspólny stan aplikacji
 
-export type Tab = 'atlas' | 'map' | 'game' | 'scan' | 'recipes' | 'album';
+export type Tab = 'atlas' | 'map' | 'scan' | 'recipes' | 'album';
 export type Sheet = { kind: 'species'; m: Mushroom } | { kind: 'recipe'; r: Recipe } | { kind: 'photo'; id: string } | { kind: 'forest'; f: Forest } | { kind: 'forests' };
 export type App = {
   c: Theme; s: Styles; lang: Lang; t: Strings;
