@@ -13,9 +13,11 @@ Wszystko działa po polsku i angielsku, w trybie jasnym i ciemnym, a dane użytk
 
 ## Zrzuty ekranu
 
-| Atlas | Karta gatunku | Skaner | Mapa | Album |
+| Atlas | Karta gatunku | Skaner | Mapa | Przepisy |
 |---|---|---|---|---|
-| ![Atlas](docs/screenshots/atlas.png) | ![Karta gatunku](docs/screenshots/gatunek.png) | ![Skaner](docs/screenshots/skaner.png) | ![Mapa](docs/screenshots/mapa.png) | ![Album](docs/screenshots/album.png) |
+| ![Atlas](docs/screenshots/atlas.jpg) | ![Karta gatunku – alert o gatunku śmiertelnie trującym](docs/screenshots/gatunek.jpg) | ![Skaner](docs/screenshots/skaner.jpg) | ![Mapa – 91 lasów](docs/screenshots/mapa.jpg) | ![Przepisy](docs/screenshots/przepisy.jpg) |
+
+*Zrzuty z telefonu z Androidem (Expo Go), tryb ciemny.*
 
 ## Funkcje
 
