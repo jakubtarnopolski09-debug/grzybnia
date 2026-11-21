@@ -1,135 +1,139 @@
-# Grzybnia – atlas grzybiarza
+# Grzybnia
 
-Mobilna aplikacja w **React Native + Expo** dla grzybiarzy. Łączy cztery rzeczy, których zwykle szuka się w kilku
-aplikacjach: **atlas 300 gatunków** z alertami o grzybach trujących, **skaner AI** rozpoznający grzyba ze zdjęć,
-**mapę lasu** z własnymi miejscówkami i nawigacją powrotną oraz **album zbiorów** ze zdjęciami i lokalizacją.
-Wszystko działa po polsku i angielsku, w trybie jasnym i ciemnym, a dane użytkownika zostają w telefonie (offline).
+Aplikacja mobilna dla grzybiarzy napisana w React Native i Expo. Zawiera atlas 300 gatunków grzybów, skaner
+rozpoznający grzyba ze zdjęcia, mapę lasów z własnymi miejscówkami, album zbiorów i przepisy. Działa po polsku
+i angielsku, w trybie jasnym i ciemnym. Dane użytkownika zapisują się w telefonie, więc większość funkcji działa
+bez internetu.
 
-| | |
-|---|---|
-| **Platforma, na którą głównie przygotowano aplikację** | **Android** |
-| **Testowana na fizycznym urządzeniu** | **Tak** – telefon z Androidem, przez Expo Go |
-| Expo SDK / React Native | 58 / 0.88 (Expo Router, React Compiler, TypeScript) |
+Platforma: Android (na nią była głównie przygotowywana)
+Testowana na fizycznym urządzeniu: tak, telefon z Androidem przez Expo Go
+Technologie: Expo SDK 58, React Native 0.88, Expo Router, TypeScript, React Compiler
 
 ## Zrzuty ekranu
 
 | Atlas | Karta gatunku | Skaner | Mapa | Przepisy |
 |---|---|---|---|---|
-| ![Atlas](docs/screenshots/atlas.jpg) | ![Karta gatunku – alert o gatunku śmiertelnie trującym](docs/screenshots/gatunek.jpg) | ![Skaner](docs/screenshots/skaner.jpg) | ![Mapa – 91 lasów](docs/screenshots/mapa.jpg) | ![Przepisy](docs/screenshots/przepisy.jpg) |
+| ![Atlas](docs/screenshots/atlas.jpg) | ![Karta gatunku](docs/screenshots/gatunek.jpg) | ![Skaner](docs/screenshots/skaner.jpg) | ![Mapa](docs/screenshots/mapa.jpg) | ![Przepisy](docs/screenshots/przepisy.jpg) |
 
-*Zrzuty z telefonu z Androidem (Expo Go), tryb ciemny.*
+Zrzuty z telefonu z Androidem, tryb ciemny.
 
 ## Funkcje
 
-### 🍄 Atlas – 300 gatunków
-- Podział na **jadalne, warunkowo jadalne, niejadalne, trujące i śmiertelnie trujące** – kolorowe oznaczenia i filtry.
-- Wyszukiwanie po nazwie polskiej, angielskiej i łacińskiej, także **bez polskich znaków** („zolciak” → „Żółciak”).
-- Sekcja **„Teraz w lesie”** – gatunki, które owocnikują w bieżącym miesiącu (sezon wyliczany z opisu gatunku).
-- Karta gatunku: zdjęcie (Wikipedia / iNaturalist), opis wyglądu i siedliska, **pasek sezonowości** (12 miesięcy),
-  przepisy z tym grzybem i **profil toksyczności** – *jak i dlaczego szkodzi* (amanityny, orellanina, muskaryna,
-  rabdomioliza po gąsce zielonce, zatrucia żołądkowe…), z objawami i czasem ich wystąpienia.
-- Atlas zawiera celowo wiele **groźnych sobowtórów** (sromotnik, muchomor jadowity, strzępiaki, hełmówka, dzwonkówka
-  trująca, lisówka – „fałszywa kurka”), żeby uczyć odróżniania.
+### Atlas
 
-### 📷 Skaner AI (Claude)
-- Do 3 zdjęć (kapelusz, spód, trzon z podstawą) z aparatu, galerii lub albumu.
-- Wynik: **najbardziej prawdopodobne gatunki z atlasu z procentami**, cechy widoczne na zdjęciach, **groźne sobowtóry
-  i jak je odróżnić** oraz kroki, jak się upewnić (wysyp zarodników, przekrój miąższu, pochwa u nasady…).
-- **Alert o gatunku śmiertelnie trującym**, jeśli taki jest wśród kandydatów lub sobowtórów.
-- Bezpieczeństwo: klucz API **nie jest w aplikacji** – zapytanie idzie przez trasę serwerową Expo Router
-  ([src/app/api/identify+api.ts](src/app/api/identify+api.ts)); zdjęcia są zmniejszane na telefonie do 1568 px,
-  a stała część promptu (lista atlasu) jest cache’owana po stronie API.
+300 gatunków podzielonych na jadalne, warunkowo jadalne, niejadalne, trujące i śmiertelnie trujące, z filtrami
+i kolorowymi oznaczeniami. Wyszukiwarka szuka po nazwie polskiej, angielskiej i łacińskiej i radzi sobie z wpisem
+bez polskich znaków. Na górze ekranu widać gatunki, które rosną w bieżącym miesiącu.
 
-### 🗺️ Mapa grzybiarza
-- Mapa OpenStreetMap i **mapa terenowa** (OpenTopoMap), tryb nocny.
-- **91 kompleksów leśnych** we wszystkich 16 województwach z opisem, typowymi grzybami i porą zbioru;
-  filtr **„W sezonie”** pokazuje lasy, w których teraz trwa sezon.
-- **Własne miejscówki**: przytrzymaj palec na mapie (albo „zapisz, gdzie jestem”), dodaj nazwę i notatkę,
-  potem nawiguj do niej.
-- **Tryb wycieczki**: zapamiętuje punkt startu, rysuje ślad GPS, liczy przebyty dystans i czas,
-  a **strzałka z kompasu wskazuje drogę powrotną** do startu (np. do samochodu).
-- Warstwa **okresowych zakazów wstępu do lasu** (Bank Danych o Lasach, Lasy Państwowe).
-- **Znaleziska z iNaturalist** w okolicy (z filtrem „tylko ten miesiąc”) i moje zdjęcia z albumu w miejscach zrobienia.
+Karta gatunku ma zdjęcie, opis wyglądu i siedliska, kalendarz sezonu, przepisy z tym grzybem oraz opis tego, jak
+i dlaczego dany grzyb szkodzi: jakie toksyny zawiera, jakie daje objawy i po jakim czasie. W atlasie jest sporo
+groźnych sobowtórów (sromotnik, muchomor jadowity, strzępiaki, hełmówka, lisówka podobna do kurki), żeby można
+było porównać je z jadalnymi gatunkami.
 
-### 🧺 Album zbiorów
-- Zdjęcia z aparatu lub galerii zapisywane w pamięci aplikacji, z **datą i lokalizacją GPS**.
-- Notatka, przypisanie gatunku z atlasu, pokazanie miejsca na mapie, wysłanie do skanera, udostępnianie.
+### Skaner
 
-### 🍳 Przepisy
-21 przepisów (zupa grzybowa, kurki w śmietanie, uszka, risotto, opieńki marynowane, poradnik suszenia…),
-każdy powiązany z gatunkami z atlasu i ze wskazówkami bezpieczeństwa.
+Użytkownik dodaje do trzech zdjęć grzyba z aparatu, galerii albo albumu. Aplikacja wysyła je do Claude API
+i pokazuje najbardziej prawdopodobne gatunki z atlasu z procentową oceną, groźne sobowtóry razem z tym, jak je
+odróżnić, oraz kroki, którymi można się upewnić. Jeśli wśród wyników jest gatunek śmiertelnie trujący, pojawia
+się wyraźne ostrzeżenie. Zdjęcia są zmniejszane na telefonie przed wysłaniem.
 
-### 📴 Offline
-W lesie zasięg bywa słaby, więc:
-- cały atlas, przepisy i lista lasów są wbudowane w aplikację,
-- album, notatki, miejscówki, trwająca wycieczka i ustawienia są zapisywane lokalnie (`expo-file-system`),
-- adresy zdjęć gatunków są zapamiętywane na 30 dni, a same obrazki trzyma cache dysku `expo-image` –
-  raz obejrzany gatunek pokazuje zdjęcie bez internetu.
+### Mapa
+
+Mapa OpenStreetMap z wersją terenową. Zaznaczone jest 91 kompleksów leśnych ze wszystkich województw, każdy
+z opisem, typowymi grzybami i porą zbioru. Filtr „W sezonie” zostawia tylko lasy, w których akurat trwa sezon.
+
+Dłuższe przytrzymanie palca na mapie dodaje własną miejscówkę z nazwą i notatką. Tryb wycieczki zapamiętuje
+punkt startu, rysuje przebytą trasę i pokazuje strzałkę z kompasu wskazującą drogę powrotną, na przykład do
+samochodu. Można też włączyć warstwę zakazów wstępu do lasu z Banku Danych o Lasach oraz zgłoszone w okolicy
+znaleziska z iNaturalist.
+
+### Album
+
+Zdjęcia z grzybobrań zapisywane razem z datą i miejscem. Do zdjęcia można dodać notatkę, przypisać gatunek
+z atlasu, pokazać je na mapie albo wysłać do skanera.
+
+### Przepisy
+
+21 przepisów, między innymi zupa grzybowa, kurki w śmietanie, uszka i opieńki marynowane, plus poradnik
+suszenia. Każdy przepis jest powiązany z gatunkami z atlasu.
+
+### Praca bez internetu
+
+Atlas, przepisy i lista lasów są wbudowane w aplikację. Album, miejscówki, trwająca wycieczka i ustawienia
+zapisują się lokalnie. Zdjęcia gatunków, które raz się wczytały, są trzymane w pamięci podręcznej, więc później
+wyświetlają się też bez zasięgu.
 
 ## Uruchomienie
 
-Wymagania: Node.js 20+, emulator Androida (Android Studio) lub telefon z aplikacją **Expo Go** (SDK 58).
+Potrzebny jest Node.js 20 lub nowszy oraz emulator Androida albo telefon z aplikacją Expo Go.
 
 ```bash
 npm install
 npx expo start
 ```
 
-W terminalu Expo naciśnij **`a`**, żeby otworzyć aplikację na emulatorze Androida, albo zeskanuj kod QR w Expo Go.
+Po starcie wciśnij `a`, żeby otworzyć aplikację na emulatorze, albo zeskanuj kod QR w Expo Go.
 
-### Skaner AI – działa bez konfiguracji
-Serwer skanera (trasa [src/app/api/identify+api.ts](src/app/api/identify+api.ts)) jest wdrożony na **EAS Hosting**
-pod adresem `https://grzybnia.expo.app/api/identify`, a klucz Claude API jest zapisany tam jako zmienna środowiskowa.
-Aplikacja domyślnie wysyła zdjęcia właśnie tam, więc **skaner działa od razu po `npx expo start`** – nie trzeba
-żadnego klucza ani pliku `.env`. Klucza nie ma ani w repozytorium, ani w aplikacji.
-Serwer ma limit zapytań na adres IP (20 na 10 minut).
+### Skaner
 
-Na emulatorze najprościej przetestować skaner, wybierając zdjęcie grzyba z galerii.
+Skaner działa od razu, bez klucza i bez pliku `.env`. Zapytania obsługuje serwer wdrożony na EAS Hosting
+(`https://grzybnia.expo.app/api/identify`), który trzyma klucz Claude API po swojej stronie. Klucza nie ma
+w repozytorium ani w aplikacji. Serwer przyjmuje do 20 zapytań z jednego adresu na 10 minut.
 
-Własny serwer lokalny z własnym kluczem (opcjonalnie) – plik `.env` (wzór: [.env.example](.env.example)):
+Na emulatorze najprościej sprawdzić skaner, wybierając zdjęcie grzyba z galerii.
+
+Jeśli ktoś chce użyć własnego klucza i serwera lokalnego, wystarczy plik `.env` według [.env.example](.env.example):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 EXPO_PUBLIC_SCANNER_URL=/api/identify
 ```
 
-Wdrożenie serwera: `npx expo export --platform web`, potem `eas deploy --prod --environment production`
-(klucz ustawiony przez `eas env:set --name ANTHROPIC_API_KEY --environment production --visibility sensitive`).
+Serwer wdraża się poleceniami `npx expo export --platform web` i `eas deploy --prod --environment production`.
+Klucz ustawia się wcześniej przez `eas env:set --name ANTHROPIC_API_KEY --environment production --visibility sensitive`.
 
 ### Sprawdzanie kodu
+
 ```bash
-npx tsc --noEmit   # typy
-npx expo lint      # ESLint (z regułami React Compiler)
+npx tsc --noEmit
+npx expo lint
 ```
 
 ## Struktura projektu
 
 ```
 src/
-  app/                 trasy Expo Router
-    index.tsx          główny ekran: stan aplikacji, zakładki, arkusze
-    api/identify+api.ts  serwer skanera (Claude API, klucz po stronie serwera)
-  data/                baza: mushrooms.ts (300 gatunków, opisy, profile toksyczności, sezony),
-                       recipes.ts, forests.ts
-  lib/                 logika bez UI: storage (zapis), photos (zdjęcia + cache), scanner + scan-prompt,
-                       map (HTML mapy Leaflet), geo (odległość, azymut), spots (miejscówki, wycieczka)
-  screens/             ekrany: atlas, karta gatunku, mapa, skaner, przepisy, album, arkusze lasów
-  components/          wspólne elementy UI (przyciski z animacją, zdjęcie gatunku, pasek zakładek)
-  styles/, constants/palette.ts, i18n/   style, kolory jasne/ciemne, teksty PL/EN
+  app/            trasy Expo Router
+    index.tsx     główny ekran, zakładki i stan aplikacji
+    api/          serwer skanera (identify+api.ts)
+  data/           gatunki, przepisy, lasy
+  lib/            logika bez interfejsu: zapis danych, zdjęcia, skaner, mapa, obliczenia GPS, miejscówki
+  screens/        ekrany aplikacji
+  components/     wspólne elementy interfejsu
+  styles/         style
+  constants/      kolory motywu jasnego i ciemnego
+  i18n/           teksty po polsku i angielsku
 ```
 
 ## Decyzje techniczne
-- **Mapa: Leaflet w `react-native-webview` zamiast `react-native-maps`** – działa w Expo Go bez klucza Google Maps,
-  daje mapę terenową (OpenTopoMap) i warstwę WMS z zakazami wstępu do lasu z BDL.
-- **Lokalizacja i kompas: `expo-location`**, zdjęcia: `expo-image-picker`, `expo-image` (cache), `expo-image-manipulator`.
-- **Animacje**: wejścia elementów, ugięcie przycisków, przesuwane podświetlenie zakładek, animowany nagłówek atlasu
-  i przejścia arkuszy (React Native Animated z natywnym sterownikiem).
-- **React Compiler** włączony – kod przechodzi lint bez naruszeń reguł hooków, więc kompilator optymalizuje wszystkie komponenty.
-- Zakładki montowane leniwie (mapa z WebView dopiero po pierwszym otwarciu), listy na `FlatList`,
-  posortowany indeks wyszukiwania liczony raz.
+
+Mapa korzysta z Leafleta w `react-native-webview` zamiast `react-native-maps`. Dzięki temu działa w Expo Go
+bez klucza Google Maps, ma mapę terenową i pozwala dodać warstwę WMS z zakazami wstępu do lasu.
+
+Lokalizacja i kompas pochodzą z `expo-location`. Zdjęcia obsługują `expo-image-picker`, `expo-image`
+i `expo-image-manipulator`.
+
+Animacje (pojawianie się elementów, reakcja przycisków na dotyk, przesuwane podświetlenie zakładek, nagłówek
+atlasu, przejścia między ekranami) są zrobione na React Native Animated z natywnym sterownikiem.
+
+Projekt ma włączony React Compiler. Kod przechodzi ESLint z jego regułami, więc kompilator optymalizuje
+wszystkie komponenty. Zakładki ładują się dopiero przy pierwszym otwarciu, a listy używają `FlatList`.
 
 ## Źródła danych
-Opisy gatunków – opracowanie własne. Zdjęcia: Wikipedia / Wikimedia Commons, iNaturalist.
-Mapy: © OpenStreetMap, OpenTopoMap. Zakazy wstępu: Bank Danych o Lasach (Lasy Państwowe). Rozpoznawanie: Claude API (Anthropic).
 
-> Aplikacja ma charakter edukacyjny. Nigdy nie jedz grzyba wyłącznie na jej podstawie – pokaż go grzyboznawcy (sanepid).
+Opisy gatunków są opracowaniem własnym. Zdjęcia pochodzą z Wikipedii, Wikimedia Commons i iNaturalist.
+Mapy: OpenStreetMap i OpenTopoMap. Zakazy wstępu: Bank Danych o Lasach (Lasy Państwowe).
+Rozpoznawanie zdjęć: Claude API (Anthropic).
+
+Aplikacja ma charakter edukacyjny. Nie należy jeść grzyba tylko na jej podstawie, zawsze warto pokazać go
+grzyboznawcy.
