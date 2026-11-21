@@ -42,3 +42,6 @@ example
 /ios
 /android
 .env
+
+# plik z kluczem API dla sprawdzających – wysyłany prywatnie, nigdy do repozytorium
+do-wyslania/
