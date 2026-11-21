@@ -75,18 +75,24 @@ npx expo start
 
 W terminalu Expo naciśnij **`a`**, żeby otworzyć aplikację na emulatorze Androida, albo zeskanuj kod QR w Expo Go.
 
-### Klucz API do skanera
-Skaner potrzebuje klucza do Claude API w pliku `.env` w głównym folderze projektu (wzór: [.env.example](.env.example)):
+### Skaner AI – działa bez konfiguracji
+Serwer skanera (trasa [src/app/api/identify+api.ts](src/app/api/identify+api.ts)) jest wdrożony na **EAS Hosting**
+pod adresem `https://grzybnia.expo.app/api/identify`, a klucz Claude API jest zapisany tam jako zmienna środowiskowa.
+Aplikacja domyślnie wysyła zdjęcia właśnie tam, więc **skaner działa od razu po `npx expo start`** – nie trzeba
+żadnego klucza ani pliku `.env`. Klucza nie ma ani w repozytorium, ani w aplikacji.
+Serwer ma limit zapytań na adres IP (20 na 10 minut).
+
+Na emulatorze najprościej przetestować skaner, wybierając zdjęcie grzyba z galerii.
+
+Własny serwer lokalny z własnym kluczem (opcjonalnie) – plik `.env` (wzór: [.env.example](.env.example)):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+EXPO_PUBLIC_SCANNER_URL=/api/identify
 ```
 
-Klucz **nie jest w repozytorium**. Osobom sprawdzającym przekazuję go osobno (plik `.env` w formularzu
-rekrutacyjnym) – wystarczy wrzucić go obok `package.json` i uruchomić `npx expo start -c`.
-Bez klucza cała reszta aplikacji działa, a skaner pokazuje czytelny komunikat.
-
-Na emulatorze najprościej przetestować skaner, wybierając zdjęcie grzyba z galerii.
+Wdrożenie serwera: `npx expo export --platform web`, potem `eas deploy --prod --environment production`
+(klucz ustawiony przez `eas env:set --name ANTHROPIC_API_KEY --environment production --visibility sensitive`).
 
 ### Sprawdzanie kodu
 ```bash

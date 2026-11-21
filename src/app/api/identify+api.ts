@@ -14,8 +14,25 @@ let client: Anthropic | null = null;
 
 const fail = (status: number, code: string, message: string) => Response.json({ error: { code, message } }, { status });
 
+// Prosty limit zapytań na adres IP (w pamięci instancji serwera – ochrona „na wszelki wypadek”,
+// bo publiczny adres skanera mógłby ktoś wykorzystać do zużywania klucza).
+const RATE_WINDOW_MS = 10 * 60_000;
+const RATE_MAX = 20;
+const hits = new Map<string, number[]>();
+function rateLimited(request: Request): boolean {
+  const ip = request.headers.get('cf-connecting-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
+  const now = Date.now();
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= RATE_MAX) { hits.set(ip, recent); return true; }
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5000) hits.clear();
+  return false;
+}
+
 export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return fail(500, 'no_key', 'ANTHROPIC_API_KEY is not set on the server');
+  if (rateLimited(request)) return fail(429, 'rate_limit', 'Too many scans – try again in a few minutes');
 
   let body: IdentifyRequest;
   try {

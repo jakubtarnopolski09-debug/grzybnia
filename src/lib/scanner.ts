@@ -7,7 +7,12 @@ import { type IdentifyRequest, normalizeResult, type ScanResult } from '@/lib/sc
 // Prompt, narzędzie i typy wyników są w src/lib/scan-prompt.ts (wspólne z serwerem).
 export { findSpecies, MAX_PHOTOS, type ScanResult } from '@/lib/scan-prompt';
 
-export type ScanPhoto = { uri: string; base64: string; mime: string; fromAlbum?: boolean };
+// Adres serwera skanera. Domyślnie wdrożony serwer na EAS Hosting (klucz API jest tam, nie w aplikacji),
+// więc skaner działa bez żadnej konfiguracji. Własny serwer lokalny z własnym kluczem:
+// EXPO_PUBLIC_SCANNER_URL=/api/identify w pliku .env (obok ANTHROPIC_API_KEY).
+export const SCANNER_URL = process.env.EXPO_PUBLIC_SCANNER_URL || 'https://grzybnia.expo.app/api/identify';
+
+export type ScanPhoto ={ uri: string; base64: string; mime: string; fromAlbum?: boolean };
 
 // Claude i tak zmniejsza zdjęcia do ~1568 px na dłuższym boku – większe tylko wydłużają wysyłanie.
 const MAX_EDGE = 1568;
@@ -34,7 +39,7 @@ export async function identify(photos: ScanPhoto[], lang: Lang): Promise<ScanRes
   const body: IdentifyRequest = { lang, photos: photos.map((p) => ({ base64: p.base64, mime: p.mime })) };
   let res: Response;
   try {
-    res = await fetch('/api/identify', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    res = await fetch(SCANNER_URL, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
   } catch (e: any) {
     throw new ScanError('network', e?.message ?? String(e));
   }
