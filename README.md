@@ -63,41 +63,11 @@ Atlas, przepisy i lista lasów są wbudowane w aplikację. Album, miejscówki, t
 zapisują się lokalnie. Zdjęcia gatunków, które raz się wczytały, są trzymane w pamięci podręcznej, więc później
 wyświetlają się też bez zasięgu.
 
-## Uruchomienie
+## Skaner
 
-Potrzebny jest Node.js 20 lub nowszy oraz emulator Androida albo telefon z aplikacją Expo Go.
-
-```bash
-npm install
-npx expo start
-```
-
-Po starcie wciśnij `a`, żeby otworzyć aplikację na emulatorze, albo zeskanuj kod QR w Expo Go.
-
-### Skaner
-
-Skaner działa od razu, bez klucza i bez pliku `.env`. Zapytania obsługuje serwer wdrożony na EAS Hosting
+Skaner działa bez klucza i bez pliku `.env`. Zapytania obsługuje serwer wdrożony na EAS Hosting
 (`https://grzybnia.expo.app/api/identify`), który trzyma klucz Claude API po swojej stronie. Klucza nie ma
-w repozytorium ani w aplikacji. Serwer przyjmuje do 20 zapytań z jednego adresu na 10 minut.
-
-Na emulatorze najprościej sprawdzić skaner, wybierając zdjęcie grzyba z galerii.
-
-Jeśli ktoś chce użyć własnego klucza i serwera lokalnego, wystarczy plik `.env` według [.env.example](.env.example):
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-EXPO_PUBLIC_SCANNER_URL=/api/identify
-```
-
-Serwer wdraża się poleceniami `npx expo export --platform web` i `eas deploy --prod --environment production`.
-Klucz ustawia się wcześniej przez `eas env:set --name ANTHROPIC_API_KEY --environment production --visibility sensitive`.
-
-### Sprawdzanie kodu
-
-```bash
-npx tsc --noEmit
-npx expo lint
-```
+w repozytorium ani w aplikacji.
 
 ## Struktura projektu
 
